@@ -802,13 +802,13 @@ export default function Home() {
     try {
       let linkedinProfile, twitterProfile, facebookProfile
 
-      const makeRequest = async (url: string, params: any) => {
-        console.log(`Attempting request to ${url} with params:`, params)
+      const makeRequest = async (targetUrl: string, params: any) => {
+        console.log(`Attempting request to ${targetUrl} with params:`, params)
         try {
           const response = await fetch('/api/proxycurl', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, params }),
+            body: JSON.stringify({ url: targetUrl, params }),
           });
           
           if (!response.ok) {
@@ -818,10 +818,10 @@ export default function Home() {
           }
           
           const data = await response.json()
-          console.log(`Successful response from ${url}:`, data)
+          console.log(`Successful response from ${targetUrl}:`, data)
           return data
         } catch (error) {
-          console.error(`Error in request to ${url}:`, error)
+          console.error(`Error in request to ${targetUrl}:`, error)
           toast.error(`API error: ${error.message || 'Unknown error'}`)
           throw error
         }
@@ -1071,15 +1071,26 @@ export default function Home() {
   }, [])
 
   const handleOsintIndustriesSearch = async () => {
-    if (!selectedContact?.email) {
-      toast.error('Please select a contact with an email address');
-      return;
+    if (!selectedContact || !selectedContact.email) {
+      toast.error("No email provided for OSINT search")
+      return
     }
 
-    setIsSearchingOsint(true);
+    setIsSearchingOsint(true)
+    
     try {
-      const response = await axios.post('/api/osint-industries', { email: selectedContact.email });
-      const osintData = response.data;
+      const response = await fetch('/api/osint-industries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: selectedContact.email }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OSINT Industries API error: ${response.status}, ${errorText}`);
+      }
+      
+      const osintData = await response.json();
 
       console.log('OSINT data received:', osintData); // Add this line for debugging
 

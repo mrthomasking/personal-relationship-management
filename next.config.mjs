@@ -25,7 +25,7 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: true,
   },
-  // Remove static export configuration to enable API routes
+  // API routes require a server component - DO NOT enable static export
   // output: 'export',
   // distDir: 'out',
   // trailingSlash: true,
