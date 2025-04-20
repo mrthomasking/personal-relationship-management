@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Add dynamic export for Vercel deployment
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const { url, params } = await req.json();

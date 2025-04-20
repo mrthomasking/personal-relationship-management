@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import OpenAI from "openai";
 
+// Add dynamic export for Vercel deployment
+export const dynamic = "force-dynamic";
+
 const openai = new OpenAI();
 
 export async function POST(req: Request) {

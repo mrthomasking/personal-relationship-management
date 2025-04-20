@@ -3,6 +3,9 @@ import { convertToCoreMessages, streamText } from "ai";
 
 export const runtime = "edge";
 
+// Add dynamic export for Vercel deployment
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   const { messages } = await req.json();
   const result = await streamText({

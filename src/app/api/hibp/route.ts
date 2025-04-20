@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Add dynamic export for Vercel deployment
+export const dynamic = "force-dynamic";
+
 const HIBP_API_KEY = process.env.HIBP_API_KEY;
 
 export async function POST(req: Request) {

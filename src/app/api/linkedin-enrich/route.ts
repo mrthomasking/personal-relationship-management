@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Add dynamic export for Vercel deployment
+export const dynamic = "force-dynamic";
+
 const PROXYCURL_API_KEY = process.env.NEXT_PUBLIC_PROXYCURL_API_KEY;
 
 export async function POST(req: Request) {
