@@ -3,10 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 // Force dynamic behavior for this API route
 export const dynamic = 'force-dynamic';
 
-// Set the maximum function duration using Vercel's config
-export const config = {
-  maxDuration: 300 // 5 minutes (300 seconds) for Pro plans
-};
+// Set the maximum function duration using Vercel's route segment config
+export const maxDuration = 300; // 5 minutes (300 seconds) for Pro plans
 
 const OSINT_API_KEY = process.env.OSINT_API_KEY;
 
