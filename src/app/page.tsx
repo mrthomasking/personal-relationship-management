@@ -1049,7 +1049,7 @@ export default function Home() {
 
     setIsSearchingOsint(true);
     try {
-      const response = await axios.get(`/api/osint-industries?email=${encodeURIComponent(selectedContact.email)}`);
+      const response = await axios.post('/api/osint-industries', { email: selectedContact.email });
       const osintData = response.data;
 
       console.log('OSINT data received:', osintData); // Add this line for debugging

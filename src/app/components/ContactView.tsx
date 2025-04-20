@@ -25,7 +25,13 @@ export function ContactView() {
 
   const handleOsintIndustriesSearch = async () => {
     try {
-      const response = await fetch(`/api/osint-industries?email=${encodeURIComponent(email)}`);
+      const response = await fetch('/api/osint-industries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
       const data = await response.json();
       setOsintResults(data);
     } catch (error) {

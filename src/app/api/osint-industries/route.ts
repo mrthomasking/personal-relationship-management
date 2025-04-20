@@ -5,26 +5,26 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const OSINT_API_KEY = process.env.OSINT_API_KEY;
 
-export async function GET(req: NextRequest) {
-  const searchParams = req.nextUrl.searchParams;
-  const email = searchParams.get('email');
-
-  if (!email) {
-    return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-  }
-
-  const apiEndpoint = 'https://api.osint.industries/v2/request';
-  const headers = {
-    'accept': 'application/json',
-    'api-key': OSINT_API_KEY as string
-  };
-  const params = new URLSearchParams({
-    'type': 'email',
-    'query': email,
-    'timeout': '55'
-  });
-
+// Remove GET method that uses searchParams
+export async function POST(req: Request) {
   try {
+    const { email } = await req.json();
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const apiEndpoint = 'https://api.osint.industries/v2/request';
+    const headers = {
+      'accept': 'application/json',
+      'api-key': OSINT_API_KEY as string
+    };
+    const params = new URLSearchParams({
+      'type': 'email',
+      'query': email,
+      'timeout': '55'
+    });
+
     const response = await fetch(`${apiEndpoint}?${params.toString()}`, { headers });
     const data = await response.json();
     return NextResponse.json(data);
