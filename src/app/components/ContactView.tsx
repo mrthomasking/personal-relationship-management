@@ -22,8 +22,12 @@ export function ContactView() {
       return;
     }
     
+    console.log('Checking email breaches for:', email);
     setIsCheckingBreaches(true);
     try {
+      // Log the request being made
+      console.log('Making request to /api/hibp');
+      
       const response = await fetch('/api/hibp', {
         method: 'POST',
         headers: {
@@ -32,11 +36,16 @@ export function ContactView() {
         body: JSON.stringify({ email }),
       });
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}, text: ${await response.text()}`);
+        const errorText = await response.text();
+        console.error(`HIBP API error: Status ${response.status}`, errorText);
+        throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('HIBP API response:', data);
       setBreachResults(data);
     } catch (error) {
       console.error('Error checking email breaches:', error);
