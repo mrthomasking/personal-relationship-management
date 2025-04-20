@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     if (!HIBP_API_KEY) {
       console.error('HIBP API key is not set');
-      return NextResponse.json({ error: 'HIBP API key is not set', found: false }, { status: 500 });
+      return NextResponse.json({ message: "HIBP API key is not set" });
     }
 
     console.log('Sending request to HIBP API for email:', email);
@@ -33,31 +33,22 @@ export async function POST(req: Request) {
 
     if (response.status === 404) {
       console.log('No breaches found for the email');
-      return NextResponse.json({ found: false, message: 'No breaches found', breaches: [] });
+      return NextResponse.json({ message: "No breaches found" });
     }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`HIBP API error: Status ${response.status}`, errorText);
-      return NextResponse.json({ 
-        found: false, 
-        error: `HIBP API responded with status ${response.status}${errorText ? ': ' + errorText : ''}`,
-        breaches: [] 
-      }, { status: 500 });
+      return NextResponse.json({ message: `HIBP API responded with status ${response.status}` });
     }
 
+    // Return the raw array of breaches as expected by the client code
     const data = await response.json();
-    // Ensure data is always an array
-    const breaches = Array.isArray(data) ? data : [];
-    console.log('Breaches found:', breaches.length);
-    return NextResponse.json({ found: true, breaches: breaches });
+    console.log('Breaches found:', data.length);
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error in HIBP API request:', error);
-    return NextResponse.json({ 
-      found: false, 
-      error: error instanceof Error ? error.message : 'An unknown error occurred',
-      breaches: [] 
-    }, { status: 500 });
+    return NextResponse.json({ message: error instanceof Error ? error.message : 'An unknown error occurred' });
   }
 }
 

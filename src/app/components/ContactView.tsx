@@ -29,7 +29,6 @@ export function ContactView() {
     setBreachResults(null);
     
     try {
-      // Simple implementation for testing
       const response = await fetch('/api/hibp', {
         method: 'POST',
         headers: {
@@ -42,19 +41,36 @@ export function ContactView() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Get the raw response data
-      const rawData = await response.json();
-      console.log('Raw API response:', rawData);
+      // Get the response data
+      const data = await response.json();
+      console.log('Raw API response:', data);
       
-      // Just store the raw data without processing
-      setBreachResults(rawData);
+      // Handle the response based on its format
+      if (data.message) {
+        // No breaches found or error message
+        setBreachResults({
+          found: false,
+          message: data.message
+        });
+      } else if (Array.isArray(data)) {
+        // Breaches found (data is an array of breaches)
+        setBreachResults({
+          found: true,
+          breaches: data
+        });
+      } else {
+        // Unknown format
+        setBreachResults({
+          found: false,
+          message: "Received unexpected data format from API"
+        });
+      }
     } catch (error) {
       console.error('Error checking email breaches:', error);
       // Set a simple error object
       setBreachResults({
         found: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        breaches: []
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       });
     } finally {
       setIsCheckingBreaches(false);
@@ -111,20 +127,43 @@ export function ContactView() {
         </Button>
       </div>
 
-      {/* Extremely simplified breach results display */}
+      {/* Display breach results */}
       {breachResults && (
         <div className="border rounded-lg p-4 mt-4">
           <h3 className="text-lg font-bold mb-2">Email Breach Results</h3>
           
           {breachResults.error ? (
             <div className="text-red-500">Error: {breachResults.error}</div>
-          ) : breachResults.found === true ? (
+          ) : breachResults.found ? (
             <div>
               <div className="bg-red-100 text-red-800 p-3 rounded-md mb-3">
-                This email appears in data breaches.
+                This email appears in {breachResults.breaches.length} data breaches.
               </div>
               <div className="bg-gray-100 p-4 rounded-md overflow-x-auto">
-                <pre>{JSON.stringify(breachResults, null, 2)}</pre>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border px-4 py-2 text-left">Name</th>
+                      <th className="border px-4 py-2 text-left">Domain</th>
+                      <th className="border px-4 py-2 text-left">Breach Date</th>
+                      <th className="border px-4 py-2 text-left">Data Classes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {breachResults.breaches.map((breach: any, index: number) => (
+                      <tr key={breach.Name || index}>
+                        <td className="border px-4 py-2">{breach.Name || 'Unknown'}</td>
+                        <td className="border px-4 py-2">{breach.Domain || 'Unknown'}</td>
+                        <td className="border px-4 py-2">
+                          {breach.BreachDate ? new Date(breach.BreachDate).toLocaleDateString() : 'Unknown'}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {Array.isArray(breach.DataClasses) ? breach.DataClasses.join(', ') : 'Unknown'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           ) : (
