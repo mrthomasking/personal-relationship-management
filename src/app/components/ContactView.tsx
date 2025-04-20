@@ -31,6 +31,11 @@ export function ContactView() {
         },
         body: JSON.stringify({ email }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}, text: ${await response.text()}`);
+      }
+      
       const data = await response.json();
       setBreachResults(data);
     } catch (error) {
