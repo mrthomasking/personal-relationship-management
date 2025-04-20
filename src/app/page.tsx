@@ -810,16 +810,19 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url, params }),
           });
+          
           if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`Error response from API route:`, errorData);
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`Error response from API route: Status ${response.status}`, errorText);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
           }
+          
           const data = await response.json()
           console.log(`Successful response from ${url}:`, data)
           return data
-    } catch (error) {
+        } catch (error) {
           console.error(`Error in request to ${url}:`, error)
+          toast.error(`API error: ${error.message || 'Unknown error'}`)
           throw error
         }
       }
@@ -891,11 +894,20 @@ export default function Home() {
     if (selectedContact && selectedContact.email) {
       setIsCheckingBreaches(true);
       try {
+        console.log("Checking email breaches for:", selectedContact.email);
+        
         const response = await fetch('/api/hibp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: selectedContact.email }),
         });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`HIBP API error: Status ${response.status}`, errorText);
+          throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
+        }
+        
         const data = await response.json();
         console.log("Email breach check result:", data);
 
@@ -926,7 +938,7 @@ export default function Home() {
 
       } catch (error) {
         console.error("Error checking email breaches:", error);
-        toast.error("Failed to check email breaches");
+        toast.error(`Failed to check email breaches: ${error.message || 'Unknown error'}`);
       } finally {
         setIsCheckingBreaches(false);
       }

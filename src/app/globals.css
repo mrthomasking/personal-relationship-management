@@ -122,3 +122,46 @@ html, body {
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Append this to the end of the file to ensure consistent behavior between localhost and Vercel */
+
+/* Force consistent flex layout behavior */
+@media (min-width: 768px) {
+  .md\:flex {
+    display: flex !important;
+  }
+  
+  .md\:w-1\/3 {
+    width: 33.333333% !important;
+  }
+  
+  .md\:w-2\/3 {
+    width: 66.666667% !important;
+  }
+  
+  .md\:hidden {
+    display: none !important;
+  }
+}
+
+/* Ensure mobile view has proper spacing */
+@media (max-width: 767px) {
+  .fixed.bottom-0 {
+    z-index: 50 !important;
+  }
+  
+  .pb-28 {
+    padding-bottom: 7rem !important;
+  }
+}
+
+/* Fix for Firefox and Safari layout differences */
+.flex-col, .flex-row {
+  display: flex;
+}
+
+/* Ensure that the layout containers take full height */
+.h-screen, .h-full {
+  height: 100vh;
+  height: 100dvh; /* Modern viewport height that accounts for mobile browser UI */
+}

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 export function ContactView() {
   const [email, setEmail] = useState('');
   const [osintResults, setOsintResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const { messages, input, handleInputChange, handleSubmit } = useChat();
 
   const handleSearchSocialMedia = async () => {
@@ -24,6 +25,12 @@ export function ContactView() {
   };
 
   const handleOsintIndustriesSearch = async () => {
+    if (!email) {
+      alert('Please enter an email address');
+      return;
+    }
+    
+    setIsSearching(true);
     try {
       const response = await fetch('/api/osint-industries', {
         method: 'POST',
@@ -36,6 +43,9 @@ export function ContactView() {
       setOsintResults(data);
     } catch (error) {
       console.error('Error fetching OSINT Industries data:', error);
+      alert('Error fetching OSINT data. Please check the console for details.');
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -47,11 +57,13 @@ export function ContactView() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <div className="flex space-x-2">
+      <div className="flex flex-wrap gap-2">
         <Button onClick={handleSearchSocialMedia}>Search Social Media Profiles</Button>
         <Button onClick={handleCheckEmailBreaches}>Check Email Breaches</Button>
         <Button onClick={handleEnrichLinkedInData}>Enrich LinkedIn Data</Button>
-        <Button onClick={handleOsintIndustriesSearch}>OSINT Industries Search</Button>
+        <Button onClick={handleOsintIndustriesSearch} disabled={isSearching}>
+          {isSearching ? 'Searching...' : 'OSINT Industries Search'}
+        </Button>
       </div>
 
       {/* Display OSINT Industries results */}
