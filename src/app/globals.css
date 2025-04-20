@@ -232,6 +232,29 @@ html, body {
   .hidden:not(.fixed.bottom-0) {
     display: none !important;
   }
+
+  /* Add these styles at the very end for the mobile menu */
+  /* Mobile Menu Specific Styles */
+  body.menu-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Ensure the mobile menu takes full height and width */
+  .fixed.inset-0.z-\[9999\] {
+    height: 100% !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: white !important;
+  }
+  
+  /* Ensure the menu doesn't disappear on certain browsers */
+  .md\:hidden.flex.flex-col {
+    display: flex !important;
+  }
 }
 
 /* Ensure scrollable areas work properly on touch devices */

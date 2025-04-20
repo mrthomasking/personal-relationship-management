@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, FileText, Bell, Upload, Menu, X, LogOut } from 'lucide-react';
@@ -25,15 +25,38 @@ export function MobileNavBar({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Debug log on every render
+  useEffect(() => {
+    console.log("MobileNavBar rendered, isMenuOpen:", isMenuOpen);
+  }, [isMenuOpen]);
+
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsMenuOpen(!isMenuOpen);
+    const newMenuState = !isMenuOpen;
+    setIsMenuOpen(newMenuState);
+    console.log("Menu toggle clicked, isMenuOpen set to:", newMenuState);
   };
 
   const navigateTo = (path: string) => {
     router.push(path);
     setIsMenuOpen(false);
   };
+
+  // Use useEffect to manage body class and overflow when menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.classList.add('menu-open');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('menu-open');
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.classList.remove('menu-open');
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
 
   return (
     <>
@@ -72,15 +95,26 @@ export function MobileNavBar({
         </div>
       </div>
 
-      {/* Expanded Menu Overlay */}
+      {/* Expanded Menu Overlay - Simplified styling approach */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-white z-[1001] flex flex-col md:hidden">
+        <div 
+          className="fixed inset-0 bg-white z-[9999] md:hidden flex flex-col"
+          style={{
+            display: 'flex', /* Force display */
+            visibility: 'visible'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log("Menu overlay clicked");
+          }}
+        >
           <div className="border-b p-4 flex justify-between items-center">
             <h2 className="text-xl font-bold">Menu</h2>
             <Button 
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMenuOpen(false);
+                console.log("Close menu button clicked");
               }}
               className="p-2 rounded-full hover:bg-gray-100"
               variant="ghost"

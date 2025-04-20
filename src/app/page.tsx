@@ -1495,11 +1495,74 @@ export default function Home() {
                     ← Back to List
                   </Button>
                   
-                  {/* Existing contact details content */}
-                  <div className="flex items-center mb-6">
-                    <div>
-                      <h2 className="text-2xl font-bold">{selectedContact.name}</h2>
-                      <p className="text-gray-500">{selectedContact.relationship}</p>
+                  {/* Enhanced contact details header with profile image */}
+                  <div className="mb-8 bg-gray-50 rounded-lg p-6 border shadow-sm">
+                    <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                      {/* Profile Image */}
+                      <div className="flex-shrink-0">
+                        <Avatar className="h-32 w-32 rounded-lg border-4 border-white shadow-md">
+                          {selectedContact.avatar ? (
+                            <AvatarImage src={getAvatarSrc(selectedContact)} alt={selectedContact.name} />
+                          ) : selectedContact.linkedin_profile_pic_url ? (
+                            <AvatarImage src={selectedContact.linkedin_profile_pic_url} alt={selectedContact.name} />
+                          ) : (
+                            <AvatarFallback className="text-4xl font-semibold bg-blue-100 text-blue-800">
+                              {selectedContact.name.charAt(0)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      </div>
+                      
+                      {/* Contact Info */}
+                      <div className="flex flex-col text-center md:text-left flex-grow">
+                        <div className="flex items-center justify-center md:justify-start gap-2">
+                          <h2 className="text-3xl font-bold">{selectedContact.name}</h2>
+                          {selectedContact.starred && (
+                            <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                          )}
+                        </div>
+                        
+                        <p className="text-gray-500 mb-3">{selectedContact.relationship || 'No relationship specified'}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 mb-4">
+                          {selectedContact.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Email:</span> {selectedContact.email}
+                            </div>
+                          )}
+                          {selectedContact.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Phone:</span> {selectedContact.phone}
+                            </div>
+                          )}
+                          {selectedContact.company && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Company:</span> {selectedContact.company}
+                            </div>
+                          )}
+                          {selectedContact.job_title && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Role:</span> {selectedContact.job_title}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 mt-auto">
+                          <Button 
+                            onClick={(e) => { e.stopPropagation(); handleEditContact(); }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Edit Contact
+                          </Button>
+                          <Button onClick={handleAddInteraction} variant="outline" size="sm">
+                            Add Interaction
+                          </Button>
+                          <Button onClick={handleAddReminder} variant="outline" size="sm">
+                            Add Reminder
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
@@ -1590,44 +1653,158 @@ export default function Home() {
                     </form>
                   ) : (
                     <>
-                      {contactFieldOrder.map((section) => {
-                        const populatedFields = section.fields.filter(key => 
-                          selectedContact[key as keyof Contact] !== undefined && 
-                          selectedContact[key as keyof Contact] !== null &&
-                          selectedContact[key as keyof Contact] !== ''
-                        );
-                        
-                        if (populatedFields.length === 0) return null;
+                      {/* Replace grid layout with single column of collapsible sections */}
+                      <div className="space-y-4">
+                        {contactFieldOrder.map((section) => {
+                          const populatedFields = section.fields.filter(key => 
+                            selectedContact[key as keyof Contact] !== undefined && 
+                            selectedContact[key as keyof Contact] !== null &&
+                            selectedContact[key as keyof Contact] !== ''
+                          );
+                          
+                          if (populatedFields.length === 0) return null;
 
-                        return (
-                          <div key={section.header} className="mb-6">
-                            <h3 className="font-bold text-lg mb-2">{section.header}</h3>
-                            {populatedFields.map((key) => {
-                              const value = selectedContact[key as keyof Contact];
-                              return (
-                                <div key={key} className="mb-4">
-                                  <h4 className="font-semibold mb-1 capitalize">{key.replace(/_/g, ' ')}</h4>
-                                  <div>{formatValue(key, value)}</div>
-                                  {key === 'otherInsights' && (
-                                    <Button
-                                      onClick={handleTidyText}
-                                      className="mt-2 w-auto bg-black text-white hover:bg-gray-800"
-                                      size="sm"
-                                    >
-                                      Tidy Text
-                                    </Button>
-                                  )}
-                                </div>
-                              );
-                            })}
+                          return (
+                            <CollapsibleSection key={section.header} title={section.header}>
+                              <div className="p-4 space-y-4">
+                                {populatedFields.map((key) => {
+                                  const value = selectedContact[key as keyof Contact];
+                                  return (
+                                    <div key={key} className="overflow-hidden border-b pb-4 last:border-b-0 last:pb-0">
+                                      <h4 className="font-semibold text-gray-700 mb-2 capitalize">{key.replace(/_/g, ' ')}</h4>
+                                      <div className="p-3 bg-gray-50 rounded border">
+                                        {formatValue(key, value)}
+                                        {key === 'otherInsights' && (
+                                          <Button
+                                            onClick={handleTidyText}
+                                            className="mt-2 w-auto bg-black text-white hover:bg-gray-800"
+                                            size="sm"
+                                          >
+                                            Tidy Text
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </CollapsibleSection>
+                          );
+                        })}
+
+                        {/* Interactions section */}
+                        <CollapsibleSection title="Interactions">
+                          <div className="p-4">
+                            {interactions.length > 0 ? (
+                              <div className="space-y-3">
+                                {interactions.map((interaction) => (
+                                  <div key={interaction.id} className="bg-gray-50 p-4 rounded-lg border hover:border-blue-300 transition-colors">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div className="font-semibold text-md">{interaction.type}</div>
+                                      <div className="text-sm text-gray-500">{new Date(interaction.date).toLocaleDateString()}</div>
+                                    </div>
+                                    <div className="text-gray-700 whitespace-pre-line text-sm">{interaction.notes}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="bg-gray-50 p-6 rounded-lg border text-center">
+                                <p className="text-gray-500">No interactions found for this contact.</p>
+                                <Button 
+                                  onClick={handleAddInteraction}
+                                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                                  size="sm"
+                                >
+                                  Add First Interaction
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                        );
-                      })}
-                      <Button onClick={(e) => { e.stopPropagation(); handleEditContact(); }}>Edit Contact</Button>
+                        </CollapsibleSection>
+
+                        {/* Reminders section */}
+                        <CollapsibleSection title="Reminders">
+                          <div className="p-4">
+                            {reminders.length > 0 ? (
+                              <div className="space-y-2">
+                                {reminders.map((reminder) => (
+                                  <div key={reminder.id} className="bg-gray-50 rounded-lg p-3 flex justify-between items-center border">
+                                    <div className={reminder.isCompleted ? 'line-through text-gray-400' : ''}>
+                                      <div className="font-semibold text-sm">{reminder.title}</div>
+                                      <div className="text-xs text-gray-500">{new Date(reminder.date).toLocaleDateString()}</div>
+                                      <div className="text-xs">{reminder.description}</div>
+                                    </div>
+                                    <Button
+                                      onClick={() => handleReminderCompletion(reminder.id, !reminder.isCompleted)}
+                                      variant="ghost"
+                                      size="icon"
+                                      className={reminder.isCompleted ? "text-green-500 hover:text-green-600" : "text-gray-500 hover:text-gray-600"}
+                                    >
+                                      {reminder.isCompleted ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center p-4">
+                                <p className="text-gray-500 mb-2">No reminders for this contact.</p>
+                                <Button onClick={handleAddReminder} size="sm">Add Reminder</Button>
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleSection>
+
+                        {/* Enrich section */}
+                        <CollapsibleSection title="Enrich Contact Information">
+                          <div className="p-4 space-y-3">
+                            <Button 
+                              onClick={() => selectedContact && searchSocialMediaProfiles(selectedContact)} 
+                              variant="outline"
+                              className="w-full justify-start bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-800"
+                              disabled={isSearchingSocialMedia || !selectedContact.name}
+                            >
+                              {isSearchingSocialMedia ? 'Searching...' : 'Search Social Media Profiles'}
+                            </Button>
+                            <Button 
+                              onClick={() => selectedContact?.email && handleCheckEmailBreaches()} 
+                              variant="outline"
+                              className="w-full justify-start bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-800"
+                              disabled={isCheckingBreaches || !selectedContact.email}
+                            >
+                              {isCheckingBreaches ? 'Checking...' : 'Check Email Breaches'}
+                            </Button>
+                            <Button 
+                              onClick={() => selectedContact?.linkedin && handleEnrichLinkedInData()} 
+                              variant="outline"
+                              className="w-full justify-start bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-800"
+                              disabled={isEnrichingLinkedIn || !selectedContact.linkedin}
+                            >
+                              {isEnrichingLinkedIn ? 'Enriching...' : 'Enrich LinkedIn Profile Data'}
+                            </Button>
+                            <Button 
+                              onClick={handleOsintIndustriesSearch} 
+                              variant="outline"
+                              className="w-full justify-start bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-800"
+                              disabled={isSearchingOsint || !selectedContact.email}
+                            >
+                              {isSearchingOsint ? 'Searching...' : 'OSINT Industries Search'}
+                            </Button>
+                            <Button
+                              onClick={() => exportContactToDocx(selectedContact)}
+                              variant="outline"
+                              className="w-full justify-start bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-800"
+                            >
+                              Export to DOCX Document
+                            </Button>
+                          </div>
+                        </CollapsibleSection>
+                      </div>
                     </>
                   )}
                   
-                  <div className="mt-6 flex flex-wrap items-center gap-2">
+                  {/* Remove the inline function definition */}
+                  
+                  <div className="mt-6 flex flex-wrap items-center gap-2 hidden">
                     <Button onClick={handleAddInteraction} variant="outline">Add Interaction</Button>
                   </div>
 
@@ -1638,95 +1815,6 @@ export default function Home() {
                       onCancel={() => setIsAddingInteraction(false)}
                     />
                   )}
-
-                  {/* Interactions section */}
-                  <div className="mt-6">
-                    <h3 className="font-semibold text-lg mb-2">Interactions</h3>
-                    {interactions.length > 0 ? (
-                      <div className="space-y-2">
-                        {interactions.map((interaction) => (
-                          <InteractionTile key={interaction.id} interaction={interaction} />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">No interactions found for this contact.</p>
-                    )}
-                  </div>
-
-                  {/* Social Media, Email Breaches, and LinkedIn Data buttons in a row */}
-                  <div className="mt-4">
-                    <h3 className="font-semibold text-lg mb-2">Enrich Contact Information</h3>
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        onClick={() => selectedContact && searchSocialMediaProfiles(selectedContact)} 
-                        variant="secondary"
-                        className="bg-black text-white hover:bg-gray-800"
-                        disabled={isSearchingSocialMedia || !selectedContact.name}
-                      >
-                        {isSearchingSocialMedia ? 'Searching...' : 'Search Social Media'}
-                      </Button>
-                      <Button 
-                        onClick={() => selectedContact?.email && handleCheckEmailBreaches()} 
-                        variant="secondary"
-                        className="bg-black text-white hover:bg-gray-800"
-                        disabled={isCheckingBreaches || !selectedContact.email}
-                      >
-                        {isCheckingBreaches ? 'Checking...' : 'Check Breaches'}
-                      </Button>
-                      <Button 
-                        onClick={() => selectedContact?.linkedin && handleEnrichLinkedInData()} 
-                        variant="secondary"
-                        className="bg-black text-white hover:bg-gray-800"
-                        disabled={isEnrichingLinkedIn || !selectedContact.linkedin}
-                      >
-                        {isEnrichingLinkedIn ? 'Enriching...' : 'LinkedIn Data'}
-                      </Button>
-                      <Button 
-                        onClick={handleOsintIndustriesSearch} 
-                        variant="secondary"
-                        className="bg-black text-white hover:bg-gray-800"
-                        disabled={isSearchingOsint || !selectedContact?.email}
-                      >
-                        {isSearchingOsint ? 'Searching...' : 'OSINT Search'}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {selectedContact && (
-                    <div className="mt-6">
-                      <h3 className="font-semibold text-lg mb-2">Reminders</h3>
-                      {reminders.length > 0 ? (
-                        <div className="space-y-2">
-                          {reminders.map((reminder) => (
-                            <div key={reminder.id} className="bg-white shadow rounded-lg p-4 flex justify-between items-center">
-                              <div className={reminder.isCompleted ? 'line-through text-gray-500' : ''}>
-                                <div className="font-semibold">{reminder.title}</div>
-                                <div className="text-sm text-gray-500">{new Date(reminder.date).toLocaleDateString()}</div>
-                                <div className="text-sm">{reminder.description}</div>
-                              </div>
-                              <Button
-                                onClick={() => handleReminderCompletion(reminder.id, !reminder.isCompleted)}
-                                variant="ghost"
-                                size="icon"
-                                className={reminder.isCompleted ? "text-green-500 hover:text-green-600" : "text-gray-500 hover:text-gray-600"}
-                              >
-                                {reminder.isCompleted ? <X className="h-5 w-5" /> : <Check className="h-5 w-5" />}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No reminders for this contact.</p>
-                      )}
-                      <Button onClick={handleAddReminder} className="mt-2">Add Reminder</Button>
-                    </div>
-                  )}
-                  <Button 
-                    onClick={() => exportContactToDocx(selectedContact)}
-                    className="mt-4"
-                  >
-                    Export as DOCX
-                  </Button>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -1739,16 +1827,14 @@ export default function Home() {
         </div>
 
         {/* Replace both Mobile Menu sections with the MobileNavBar component */}
-        {isMobileView && (
-          <MobileNavBar 
-            currentPage="home"
-            onAddContact={handleAddContact}
-            onShowContactsList={handleContactsButtonClick}
-            onGlobalInteraction={handleGlobalInteractionClick}
-            onUploadChatLog={() => setIsUploadingChatLog(true)}
-            onSignOut={handleSignOut}
-          />
-        )}
+        <MobileNavBar 
+          currentPage="home"
+          onAddContact={handleAddContact}
+          onShowContactsList={handleContactsButtonClick}
+          onGlobalInteraction={handleGlobalInteractionClick}
+          onUploadChatLog={() => setIsUploadingChatLog(true)}
+          onSignOut={handleSignOut}
+        />
 
         {/* ReminderForm Modal */}
         {isAddingReminder && selectedContact && (
@@ -1937,4 +2023,28 @@ function InteractionTile({ interaction }: { interaction: Interaction }) {
       <div className="text-sm">{interaction.notes}</div>
     </div>
   )
+}
+
+// Add this after the InteractionTile component, before the Home export
+function CollapsibleSection({ title, children }: { title: string, children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+      <div 
+        className="font-bold text-lg p-4 bg-gray-50 border-b flex justify-between items-center cursor-pointer select-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <h3>{title}</h3>
+        <div>
+          {isOpen ? (
+            <ChevronUp className="h-5 w-5 text-gray-500" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-gray-500" />
+          )}
+        </div>
+      </div>
+      {isOpen && children}
+    </div>
+  );
 }
