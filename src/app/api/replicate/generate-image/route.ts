@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import Replicate from "replicate";
 
-// Add dynamic export for Vercel deployment
-export const dynamic = "force-dynamic";
+// Remove dynamic export as it conflicts with static export
+// export const dynamic = "force-dynamic";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,

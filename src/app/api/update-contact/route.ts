@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
-// Add dynamic export for Vercel deployment
-export const dynamic = "force-dynamic";
+// Remove dynamic export as it conflicts with static export
+// export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {

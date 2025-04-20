@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Add dynamic export for Vercel deployment
-export const dynamic = "force-dynamic";
+// Remove dynamic export as it conflicts with static export
+// export const dynamic = "force-dynamic";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

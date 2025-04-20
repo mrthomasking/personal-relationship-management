@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Add dynamic export for Vercel deployment
-export const dynamic = "force-dynamic";
+// Remove dynamic export as it conflicts with static export
+// export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   return NextResponse.json({ message: 'Insights API endpoint' });

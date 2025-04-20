@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Add this to tell Next.js this is a dynamic route
-export const dynamic = 'force-dynamic';
+// Remove dynamic export as it conflicts with static export
+// export const dynamic = 'force-dynamic';
 
 const OSINT_API_KEY = process.env.OSINT_API_KEY;
 
