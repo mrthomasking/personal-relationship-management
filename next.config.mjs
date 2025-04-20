@@ -25,10 +25,10 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: true,
   },
-  // Static generation config
-  output: 'export',
-  distDir: 'out',
-  trailingSlash: true,
+  // Remove static export configuration to enable API routes
+  // output: 'export',
+  // distDir: 'out',
+  // trailingSlash: true,
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if

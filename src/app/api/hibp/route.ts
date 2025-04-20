@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-// Add dynamic export to ensure the route is handled correctly
+// Enable dynamic API route behavior for server-side rendering
 export const dynamic = "force-dynamic";
 
 const HIBP_API_KEY = process.env.HIBP_API_KEY;
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     if (response.status === 404) {
       console.log('No breaches found for the email');
-      return NextResponse.json({ found: false, message: 'No breaches found' });
+      return NextResponse.json({ found: false, message: 'No breaches found', breaches: [] });
     }
 
     if (!response.ok) {
@@ -41,18 +41,22 @@ export async function POST(req: Request) {
       console.error(`HIBP API error: Status ${response.status}`, errorText);
       return NextResponse.json({ 
         found: false, 
-        error: `HIBP API responded with status ${response.status}${errorText ? ': ' + errorText : ''}` 
+        error: `HIBP API responded with status ${response.status}${errorText ? ': ' + errorText : ''}`,
+        breaches: [] 
       }, { status: 500 });
     }
 
     const data = await response.json();
-    console.log('Breaches found:', data.length);
-    return NextResponse.json({ found: true, breaches: data });
+    // Ensure data is always an array
+    const breaches = Array.isArray(data) ? data : [];
+    console.log('Breaches found:', breaches.length);
+    return NextResponse.json({ found: true, breaches: breaches });
   } catch (error) {
     console.error('Error in HIBP API request:', error);
     return NextResponse.json({ 
       found: false, 
-      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      breaches: [] 
     }, { status: 500 });
   }
 }

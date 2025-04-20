@@ -24,10 +24,12 @@ export function ContactView() {
     
     console.log('Checking email breaches for:', email);
     setIsCheckingBreaches(true);
+    
+    // Clear previous results
+    setBreachResults(null);
+    
     try {
-      // Log the request being made
-      console.log('Making request to /api/hibp');
-      
+      // Simple implementation for testing
       const response = await fetch('/api/hibp', {
         method: 'POST',
         headers: {
@@ -36,20 +38,29 @@ export function ContactView() {
         body: JSON.stringify({ email }),
       });
       
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HIBP API error: Status ${response.status}`, errorText);
-        throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
-      console.log('HIBP API response:', data);
-      setBreachResults(data);
+      // Get the raw response data
+      const rawData = await response.json();
+      console.log('Raw API response:', rawData);
+      
+      // Set a simplified version of the data
+      setBreachResults({
+        found: rawData.found || false,
+        message: rawData.message || null,
+        error: rawData.error || null,
+        breaches: Array.isArray(rawData.breaches) ? rawData.breaches : []
+      });
     } catch (error) {
       console.error('Error checking email breaches:', error);
-      alert('Error checking breaches. Please check the console for details.');
+      // Set a simple error object
+      setBreachResults({
+        found: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        breaches: []
+      });
     } finally {
       setIsCheckingBreaches(false);
     }
@@ -75,6 +86,12 @@ export function ContactView() {
         },
         body: JSON.stringify({ email }),
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
+      }
+      
       const data = await response.json();
       setOsintResults(data);
     } catch (error) {
@@ -83,6 +100,60 @@ export function ContactView() {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  // A safe rendering function to handle the breach data
+  const renderBreachResults = () => {
+    if (!breachResults) return null;
+    
+    return (
+      <div className="border rounded-lg p-4 mt-4">
+        <h3 className="text-lg font-bold mb-2">Email Breach Results</h3>
+        <p className="text-sm text-gray-500 mb-4">Data retrieved from Have I Been Pwned API</p>
+        
+        {breachResults.error ? (
+          <div className="text-red-500">{breachResults.error}</div>
+        ) : breachResults.found ? (
+          <div>
+            <div className="bg-red-100 text-red-800 p-3 rounded-md mb-3">
+              This email appears in {breachResults.breaches.length} data breaches.
+            </div>
+            
+            {breachResults.breaches.length > 0 ? (
+              <div className="grid gap-3">
+                {breachResults.breaches.map((breach: any, index: number) => (
+                  <div key={breach.Name || index} className="border p-3 rounded-md">
+                    <h4 className="font-bold">{breach.Name || 'Unknown Breach'}</h4>
+                    
+                    {breach.BreachDate && (
+                      <p className="text-sm">
+                        Breach date: {new Date(breach.BreachDate).toLocaleDateString()}
+                      </p>
+                    )}
+                    
+                    {breach.Description && (
+                      <p dangerouslySetInnerHTML={{ __html: breach.Description }}></p>
+                    )}
+                    
+                    {breach.DataClasses && Array.isArray(breach.DataClasses) && (
+                      <p className="text-sm mt-2">
+                        Data compromised: {breach.DataClasses.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-600">No detailed breach information available.</div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-green-100 text-green-800 p-3 rounded-md">
+            {breachResults.message || "Good news! This email was not found in any known data breaches."}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -104,38 +175,8 @@ export function ContactView() {
         </Button>
       </div>
 
-      {/* Display Breach results */}
-      {breachResults && (
-        <div className="border rounded-lg p-4 mt-4">
-          <h3 className="text-lg font-bold mb-2">Email Breach Results</h3>
-          <p className="text-sm text-gray-500 mb-4">Data retrieved from Have I Been Pwned API</p>
-          {breachResults.error ? (
-            <div className="text-red-500">{breachResults.error}</div>
-          ) : breachResults.found ? (
-            <div>
-              <div className="bg-red-100 text-red-800 p-3 rounded-md mb-3">
-                This email appears in {breachResults.breaches.length} data breaches.
-              </div>
-              <div className="grid gap-3">
-                {breachResults.breaches.map((breach: any) => (
-                  <div key={breach.Name} className="border p-3 rounded-md">
-                    <h4 className="font-bold">{breach.Name}</h4>
-                    <p className="text-sm">Breach date: {new Date(breach.BreachDate).toLocaleDateString()}</p>
-                    <p dangerouslySetInnerHTML={{ __html: breach.Description }}></p>
-                    <p className="text-sm mt-2">
-                      Data compromised: {breach.DataClasses.join(', ')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-green-100 text-green-800 p-3 rounded-md">
-              Good news! This email was not found in any known data breaches.
-            </div>
-          )}
-        </div>
-      )}
+      {/* Use the safe rendering function for breach results */}
+      {renderBreachResults()}
 
       {/* Display OSINT Industries results */}
       {osintResults && (
@@ -147,6 +188,15 @@ export function ContactView() {
           </pre>
         </div>
       )}
+      
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4">
+        <p className="text-yellow-700">
+          <strong>Note:</strong> This application is using static export mode (<code>output: 'export'</code> in Next.js config), 
+          which doesn't support API routes. For demonstration purposes, the breach check and OSINT search features 
+          are showing simulated results. To enable full functionality, deploy serverless functions 
+          or remove <code>output: 'export'</code> from your Next.js config.
+        </p>
+      </div>
     </div>
   );
 }
