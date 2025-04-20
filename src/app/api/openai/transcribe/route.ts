@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
 import OpenAI from "openai";
 
 // Add dynamic export for Vercel deployment
@@ -8,34 +7,24 @@ export const dynamic = "force-dynamic";
 const openai = new OpenAI();
 
 export async function POST(req: Request) {
-  const body = await req.json();
-
-  const base64Audio = body.audio;
-
-  // Convert the base64 audio data to a Buffer
-  const audio = Buffer.from(base64Audio, "base64");
-
-  // Define the file path for storing the temporary WAV file
-  const filePath = "tmp/input.wav";
-
   try {
-    // Write the audio data to a temporary WAV file synchronously
-    fs.writeFileSync(filePath, audio);
+    const body = await req.json();
+    const base64Audio = body.audio;
 
-    // Create a readable stream from the temporary WAV file
-    const readStream = fs.createReadStream(filePath);
+    // Convert the base64 audio data to a Blob
+    const audioBlob = Buffer.from(base64Audio, "base64");
+    
+    // Create a File object from the Blob
+    const file = new File([audioBlob], "audio.wav", { type: "audio/wav" });
 
     const data = await openai.audio.transcriptions.create({
-      file: readStream,
+      file: file,
       model: "whisper-1",
     });
-
-    // Remove the temporary file after successful processing
-    fs.unlinkSync(filePath);
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error processing audio:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Failed to process audio" }, { status: 500 });
   }
 }
