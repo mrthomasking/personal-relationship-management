@@ -26,6 +26,7 @@ import { saveAs } from 'file-saver';
 import { UploadChatLog } from '@/components/UploadChatLog';
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { MobileNavBar } from '@/components/MobileNavBar'
 
 // @ts-nocheck
 
@@ -407,23 +408,8 @@ const AddContactForm: React.FC<AddContactFormProps> = ({ onAddContact, onCancel 
       <div className="p-6 flex-grow overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Add New Contact</h2>
         
-        {/* Improved Profile Image Upload */}
-        <div className="mb-6 flex flex-col items-center">
-          <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-gray-300 mb-3 group">
-            <Image 
-              src={imagePreview || '/placeholder-user.jpg'} 
-              alt="Profile Preview" 
-              width={128} 
-              height={128} 
-              className="object-cover w-full h-full"
-            />
-            <label htmlFor="new-profile-image-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-              <div className="flex flex-col items-center text-white p-2">
-                <Camera className="h-8 w-8 mb-1" />
-                <span className="text-sm text-center">Add Photo</span>
-              </div>
-            </label>
-          </div>
+        {/* Profile Image Upload - Simplified to just the button */}
+        <div className="mb-6">
           <input
             id="new-profile-image-upload"
             type="file"
@@ -435,12 +421,14 @@ const AddContactForm: React.FC<AddContactFormProps> = ({ onAddContact, onCancel 
           <Button 
             type="button" 
             variant="outline" 
-            size="sm" 
-            className="mt-1"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
           >
             <Camera className="h-4 w-4 mr-2" /> Select Profile Picture
           </Button>
+          {imagePreview && (
+            <p className="mt-2 text-sm text-gray-500">Profile picture selected</p>
+          )}
         </div>
         
         {contactFieldOrder.map((section) => (
@@ -564,17 +552,31 @@ const OsintField: React.FC<{ value: string }> = ({ value }) => {
     <div className="relative">
       <div className="prose prose-sm max-w-none">
         {isExpanded ? (
-          <div className="whitespace-pre-wrap">{formatOsintData(parsedValue)}</div>
+          <div className="whitespace-pre-wrap pb-20">
+            {formatOsintData(parsedValue)}
+            {/* Added more padding at bottom for mobile */}
+          </div>
         ) : (
           <div className="text-gray-600 italic">{getOsintSummary(parsedValue)}</div>
         )}
       </div>
-      <div className="mt-2">
+      <div className={isExpanded 
+        ? "fixed bottom-20 md:bottom-4 right-4 z-[1000] w-full max-w-[160px] md:max-w-none flex justify-end" 
+        : "mt-2"
+      }>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-blue-500 hover:text-blue-700 font-medium"
+          className={isExpanded 
+            ? "bg-blue-500 text-white hover:bg-blue-600 font-medium rounded-full px-4 py-3 md:py-2 shadow-lg flex items-center justify-center w-full md:w-auto"
+            : "text-blue-500 hover:text-blue-700 font-medium"
+          }
         >
-          {isExpanded ? 'View Less' : 'View More'}
+          {isExpanded ? (
+            <>
+              <span>View Less</span>
+              <ChevronUp className="ml-1 h-5 w-5 md:h-4 md:w-4" />
+            </>
+          ) : 'View More'}
         </button>
       </div>
     </div>
@@ -585,6 +587,7 @@ export default function Home() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [isClient, setIsClient] = useState(false)
+  const [isMobileView, setIsMobileView] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -1128,7 +1131,10 @@ export default function Home() {
   }, [interactions])
 
   useEffect(() => {
+    setIsClient(true)
+    
     const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768)
       if (window.innerWidth >= 768) {
         setIsMobileListView(false)
         setIsMobileMenuOpen(false)
@@ -1138,8 +1144,8 @@ export default function Home() {
     }
 
     window.addEventListener('resize', handleResize)
-    handleResize()
-
+    handleResize() // Call on initial render
+    
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
@@ -1373,9 +1379,6 @@ export default function Home() {
           <Button variant="ghost" className="mb-4" onClick={handleGlobalInteractionClick}>
             <Calendar className="h-6 w-6" />
           </Button>
-          {/* <Button variant="ghost" className="mb-4" onClick={handleAddReminder}>
-            <Bell className="h-6 w-6" />
-          </Button> */}
           <Button variant="ghost" className="mb-4" onClick={() => router.push('/all-reminders')}>
             <Bell className="h-6 w-6" />
           </Button>
@@ -1494,15 +1497,6 @@ export default function Home() {
                   
                   {/* Existing contact details content */}
                   <div className="flex items-center mb-6">
-                    <div className="relative h-20 w-20 mr-4">
-                      <Image
-                        src={getAvatarSrc(selectedContact)}
-                        alt={selectedContact.name || 'Contact'}
-                        width={80}
-                        height={80}
-                        className="rounded-full"
-                      />
-                    </div>
                     <div>
                       <h2 className="text-2xl font-bold">{selectedContact.name}</h2>
                       <p className="text-gray-500">{selectedContact.relationship}</p>
@@ -1511,23 +1505,8 @@ export default function Home() {
                   
                   {isEditing ? (
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }} className="space-y-4" onClick={(e) => e.stopPropagation()}>
-                      {/* Improved profile image upload in edit mode */}
-                      <div className="mb-6 flex flex-col items-center">
-                        <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-gray-300 mb-3 group">
-                          <Image 
-                            src={editedContact?.avatar || '/placeholder-user.jpg'} 
-                            alt="Profile Avatar" 
-                            width={128} 
-                            height={128} 
-                            className="object-cover w-full h-full"
-                          />
-                          <label htmlFor="profile-image-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                            <div className="flex flex-col items-center text-white p-2">
-                              <Camera className="h-8 w-8 mb-1" />
-                              <span className="text-sm text-center">Change Photo</span>
-                            </div>
-                          </label>
-                        </div>
+                      {/* Simplified profile image upload in edit mode */}
+                      <div className="mb-6">
                         <input
                           id="profile-image-upload"
                           type="file"
@@ -1542,8 +1521,7 @@ export default function Home() {
                         <Button 
                           type="button" 
                           variant="outline" 
-                          size="sm" 
-                          className="mt-1"
+                          size="sm"
                           onClick={() => document.getElementById('profile-image-upload')?.click()}
                         >
                           <Camera className="h-4 w-4 mr-2" /> Select Profile Picture
@@ -1582,9 +1560,32 @@ export default function Home() {
                           ))}
                         </div>
                       ))}
-                      <div className="flex justify-end space-x-2">
+                      {/* Fixed position buttons at the bottom */}
+                      <div className="flex justify-end space-x-2 pb-24 md:pb-4">
                         <Button type="submit" onClick={(e) => e.stopPropagation()}>Save Changes</Button>
                         <Button onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }} variant="outline">Cancel</Button>
+                      </div>
+                      
+                      {/* Floating Save Button */}
+                      <div className="fixed bottom-20 md:bottom-4 right-4 z-[1000] flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={(e) => { 
+                            e.stopPropagation();
+                            handleCancelEdit();
+                          }}
+                          variant="outline"
+                          className="rounded-full shadow-lg"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center"
+                        >
+                          Save Changes
+                        </Button>
                       </div>
                     </form>
                   ) : (
@@ -1640,7 +1641,7 @@ export default function Home() {
 
                   {/* Interactions section */}
                   <div className="mt-6">
-                    <h3 className="font-semibold mb-2">Interactions</h3>
+                    <h3 className="font-semibold text-lg mb-2">Interactions</h3>
                     {interactions.length > 0 ? (
                       <div className="space-y-2">
                         {interactions.map((interaction) => (
@@ -1653,44 +1654,47 @@ export default function Home() {
                   </div>
 
                   {/* Social Media, Email Breaches, and LinkedIn Data buttons in a row */}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button 
-                      onClick={() => selectedContact && searchSocialMediaProfiles(selectedContact)} 
-                      variant="secondary"
-                      className="bg-black text-white hover:bg-gray-800"
-                      disabled={isSearchingSocialMedia || !selectedContact.name}
-                    >
-                      {isSearchingSocialMedia ? 'Searching...' : 'Search Social Media'}
-                    </Button>
-                    <Button 
-                      onClick={() => selectedContact?.email && handleCheckEmailBreaches()} 
-                      variant="secondary"
-                      className="bg-black text-white hover:bg-gray-800"
-                      disabled={isCheckingBreaches || !selectedContact.email}
-                    >
-                      {isCheckingBreaches ? 'Checking...' : 'Check Breaches'}
-                    </Button>
-                    <Button 
-                      onClick={() => selectedContact?.linkedin && handleEnrichLinkedInData()} 
-                      variant="secondary"
-                      className="bg-black text-white hover:bg-gray-800"
-                      disabled={isEnrichingLinkedIn || !selectedContact.linkedin}
-                    >
-                      {isEnrichingLinkedIn ? 'Enriching...' : 'LinkedIn Data'}
-                    </Button>
-                    <Button 
-                      onClick={handleOsintIndustriesSearch} 
-                      variant="secondary"
-                      className="bg-black text-white hover:bg-gray-800"
-                      disabled={isSearchingOsint || !selectedContact?.email}
-                    >
-                      {isSearchingOsint ? 'Searching...' : 'OSINT Search'}
-                    </Button>
+                  <div className="mt-4">
+                    <h3 className="font-semibold text-lg mb-2">Enrich Contact Information</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        onClick={() => selectedContact && searchSocialMediaProfiles(selectedContact)} 
+                        variant="secondary"
+                        className="bg-black text-white hover:bg-gray-800"
+                        disabled={isSearchingSocialMedia || !selectedContact.name}
+                      >
+                        {isSearchingSocialMedia ? 'Searching...' : 'Search Social Media'}
+                      </Button>
+                      <Button 
+                        onClick={() => selectedContact?.email && handleCheckEmailBreaches()} 
+                        variant="secondary"
+                        className="bg-black text-white hover:bg-gray-800"
+                        disabled={isCheckingBreaches || !selectedContact.email}
+                      >
+                        {isCheckingBreaches ? 'Checking...' : 'Check Breaches'}
+                      </Button>
+                      <Button 
+                        onClick={() => selectedContact?.linkedin && handleEnrichLinkedInData()} 
+                        variant="secondary"
+                        className="bg-black text-white hover:bg-gray-800"
+                        disabled={isEnrichingLinkedIn || !selectedContact.linkedin}
+                      >
+                        {isEnrichingLinkedIn ? 'Enriching...' : 'LinkedIn Data'}
+                      </Button>
+                      <Button 
+                        onClick={handleOsintIndustriesSearch} 
+                        variant="secondary"
+                        className="bg-black text-white hover:bg-gray-800"
+                        disabled={isSearchingOsint || !selectedContact?.email}
+                      >
+                        {isSearchingOsint ? 'Searching...' : 'OSINT Search'}
+                      </Button>
+                    </div>
                   </div>
 
                   {selectedContact && (
                     <div className="mt-6">
-                      <h3 className="font-semibold mb-2">Reminders</h3>
+                      <h3 className="font-semibold text-lg mb-2">Reminders</h3>
                       {reminders.length > 0 ? (
                         <div className="space-y-2">
                           {reminders.map((reminder) => (
@@ -1734,28 +1738,17 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Mobile menu bar with icons only - no captions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 md:hidden z-50 flex justify-around mobile-nav" style={{ height: "4rem" }}>
-          <Button variant="ghost" className="flex flex-col items-center" onClick={handleContactsButtonClick}>
-            <Users className="h-6 w-6" />
-          </Button>
-          
-          <Button variant="ghost" className="flex flex-col items-center" onClick={handleAddContact}>
-            <UserPlus className="h-6 w-6" />
-          </Button>
-          
-          <Button variant="ghost" className="flex flex-col items-center" onClick={handleGlobalInteractionClick}>
-            <FileText className="h-6 w-6" />
-          </Button>
-          
-          <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/all-reminders')}>
-            <Bell className="h-6 w-6" />
-          </Button>
-          
-          <Button variant="ghost" className="flex flex-col items-center" onClick={() => setIsUploadingChatLog(true)}>
-            <Upload className="h-6 w-6" />
-          </Button>
-        </div>
+        {/* Replace both Mobile Menu sections with the MobileNavBar component */}
+        {isMobileView && (
+          <MobileNavBar 
+            currentPage="home"
+            onAddContact={handleAddContact}
+            onShowContactsList={handleContactsButtonClick}
+            onGlobalInteraction={handleGlobalInteractionClick}
+            onUploadChatLog={() => setIsUploadingChatLog(true)}
+            onSignOut={handleSignOut}
+          />
+        )}
 
         {/* ReminderForm Modal */}
         {isAddingReminder && selectedContact && (

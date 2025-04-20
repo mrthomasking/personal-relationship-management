@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Users, Calendar, CalendarClock, LogOut, Check, Plus, FileText, UserPlus, Bell, Upload } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { MobileNavBar } from '@/components/MobileNavBar'
 
 interface Reminder {
   id: string
@@ -239,28 +240,11 @@ export default function AllReminders() {
         </div>
       </div>
       
-      {/* Mobile menu bar with icons only - no captions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 md:hidden z-50 flex justify-around mobile-nav">
-        <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/')}>
-          <Users className="h-6 w-6" />
-        </Button>
-        
-        <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/')}>
-          <UserPlus className="h-6 w-6" />
-        </Button>
-        
-        <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/')}>
-          <FileText className="h-6 w-6" />
-        </Button>
-        
-        <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/all-reminders')}>
-          <Bell className="h-6 w-6" />
-        </Button>
-        
-        <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/')}>
-          <Upload className="h-6 w-6" />
-        </Button>
-      </div>
+      {/* Replace the mobile menu bar with the MobileNavBar component */}
+      <MobileNavBar 
+        currentPage="reminders"
+        onSignOut={handleSignOut}
+      />
     </div>
   )
 }
