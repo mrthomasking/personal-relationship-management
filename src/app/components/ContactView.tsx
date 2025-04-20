@@ -7,6 +7,7 @@ export function ContactView() {
   const [email, setEmail] = useState('');
   const [osintResults, setOsintResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [osintError, setOsintError] = useState<string | null>(null);
   const [breachResults, setBreachResults] = useState<any>(null);
   const [isCheckingBreaches, setIsCheckingBreaches] = useState(false);
   const { messages, input, handleInputChange, handleSubmit } = useChat();
@@ -89,47 +90,84 @@ export function ContactView() {
     }
     
     setIsSearching(true);
-    // Similar issue with OSINT Industries - for static exports we would need an external service
+    setOsintResults(null);
+    setOsintError(null);
+    
     try {
-      // Simulating a response as with the breach check
-      setTimeout(() => {
-        const mockData = {
-          results: [
-            { source: "OSINT Industries", info: "This is a simulated result" }
-          ]
-        };
-        setOsintResults(mockData);
-        setIsSearching(false);
-      }, 1500);
+      console.log('Starting OSINT Industries search for:', email);
+      const response = await fetch('/api/osint-industries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      console.log('OSINT response status:', response.status);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('OSINT Industries API error:', data);
+        setOsintError(data.error || 'Failed to fetch data from OSINT Industries');
+        return;
+      }
+      
+      console.log('OSINT Industries data received:', data);
+      setOsintResults(data);
     } catch (error) {
       console.error('Error fetching OSINT Industries data:', error);
-      alert('Error fetching OSINT data. Please check the console for details.');
+      setOsintError('Network or server error when contacting OSINT Industries API');
+    } finally {
       setIsSearching(false);
     }
   };
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 w-full max-w-full overflow-hidden">
       <Input
         type="email"
         placeholder="Enter email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        className="w-full"
       />
       <div className="flex flex-wrap gap-2">
-        <Button onClick={handleSearchSocialMedia}>Search Social Media Profiles</Button>
-        <Button onClick={handleCheckEmailBreaches} disabled={isCheckingBreaches}>
-          {isCheckingBreaches ? 'Checking...' : 'Check Email Breaches'}
+        <Button 
+          onClick={handleSearchSocialMedia}
+          className="flex-grow flex-shrink-0 min-w-[140px]"
+          size="sm"
+        >
+          Search Social Media
         </Button>
-        <Button onClick={handleEnrichLinkedInData}>Enrich LinkedIn Data</Button>
-        <Button onClick={handleOsintIndustriesSearch} disabled={isSearching}>
-          {isSearching ? 'Searching...' : 'OSINT Industries Search'}
+        <Button 
+          onClick={handleCheckEmailBreaches} 
+          disabled={isCheckingBreaches}
+          className="flex-grow flex-shrink-0 min-w-[140px]"
+          size="sm"
+        >
+          {isCheckingBreaches ? 'Checking...' : 'Check Breaches'}
+        </Button>
+        <Button 
+          onClick={handleEnrichLinkedInData}
+          className="flex-grow flex-shrink-0 min-w-[140px]"
+          size="sm"
+        >
+          LinkedIn Data
+        </Button>
+        <Button 
+          onClick={handleOsintIndustriesSearch} 
+          disabled={isSearching}
+          className="flex-grow flex-shrink-0 min-w-[140px]"
+          size="sm"
+        >
+          {isSearching ? 'Searching...' : 'OSINT Search'}
         </Button>
       </div>
 
       {/* Display breach results */}
       {breachResults && (
-        <div className="border rounded-lg p-4 mt-4">
+        <div className="border rounded-lg p-4 mt-4 w-full overflow-x-auto">
           <h3 className="text-lg font-bold mb-2">Email Breach Results</h3>
           
           {breachResults.error ? (
@@ -175,13 +213,27 @@ export function ContactView() {
       )}
 
       {/* Display OSINT Industries results */}
-      {osintResults && (
-        <div className="border rounded-lg p-4 mt-4">
+      {(osintResults || osintError) && (
+        <div className="border rounded-lg p-4 mt-4 w-full overflow-hidden">
           <h3 className="text-lg font-bold mb-2">OSINT Industries Results</h3>
           <p className="text-sm text-gray-500 mb-4">Data retrieved from OSINT Industries API</p>
-          <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto">
-            {JSON.stringify(osintResults, null, 2)}
-          </pre>
+          
+          {osintError ? (
+            <div className="bg-red-100 text-red-800 p-3 rounded-md">
+              <p className="font-semibold">Error:</p>
+              <p>{osintError}</p>
+              <p className="mt-2 text-sm">
+                Note: The OSINT Industries API may take longer to respond than allowed by serverless functions.
+                If you receive timeout errors frequently, consider using a different approach.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-gray-100 p-4 rounded-md overflow-x-auto max-w-full">
+              <pre className="whitespace-pre-wrap break-words text-sm">
+                {JSON.stringify(osintResults, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       )}
     </div>

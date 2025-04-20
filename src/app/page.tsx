@@ -1040,18 +1040,35 @@ export default function Home() {
   }, [])
 
   const handleContactsButtonClick = useCallback(() => {
-    setIsMobileListView(true);
-    setIsMobileMenuOpen(false);
-    setSelectedContact(null);
-    setIsAddingContact(false);
-  }, []);
+    setIsMobileListView(true)
+    setIsMobileMenuOpen(false)
+    setSelectedContact(null)
+    setIsAddingContact(false)
+    setIsAddingGlobalInteraction(false)
+  }, [])
 
-  const handleContactSelect = useCallback((contact: Contact) => {
-    setSelectedContact(contact);
-    setIsAddingContact(false);
-    setIsMobileListView(false);
-    setIsMobileAddingContact(false);
-  }, []);
+  const handleContactClick = useCallback((contact: Contact) => {
+    console.log('Contact clicked, changing view to details', contact.name)
+    setSelectedContact(contact)
+    setIsEditing(false)
+    setIsMobileListView(false) // This hides the contact list and shows contact details on mobile
+    setIsAddingContact(false)
+    setEditedContact(null)
+    setIsAddingInteraction(false)
+    
+    // Force a re-render if needed
+    setTimeout(() => {
+      console.log('Mobile view state after click:', {
+        isMobileListView: false,
+        contactId: contact.id,
+        contactName: contact.name
+      })
+    }, 100)
+  }, [])
+
+  const handleBackToList = useCallback(() => {
+    setIsMobileListView(true)
+  }, [])
 
   const handleOsintIndustriesSearch = async () => {
     if (!selectedContact?.email) {
@@ -1260,7 +1277,7 @@ export default function Home() {
         {/* Main Content */}
         <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
           {/* Contact List */}
-          <div className={`w-full md:w-1/3 bg-white border-r flex flex-col h-full ${(isAddingContact || selectedContact) && !isMobileListView ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`w-full md:w-1/3 bg-white border-r flex flex-col h-full ${isMobileListView ? 'flex' : 'hidden md:flex'}`}>
             <div className="flex-shrink-0 p-4 border-b">
               <Input 
                 type="text" 
@@ -1283,7 +1300,7 @@ export default function Home() {
                     className={`flex items-center p-4 hover:bg-gray-100 cursor-pointer ${
                       selectedContact?.id === contact.id ? 'bg-gray-100' : ''
                     }`}
-                    onClick={() => handleContactSelect(contact)}
+                    onClick={() => handleContactClick(contact)}
                   >
                     <Button
                       variant="ghost"
@@ -1325,8 +1342,8 @@ export default function Home() {
           </div>
 
           {/* Contact details or Add Contact form or Global Interaction form */}
-          <div className={`w-full md:w-2/3 flex-col h-full overflow-y-auto relative ${!isMobileListView || isMobileAddingContact || isAddingGlobalInteraction ? 'block' : 'hidden md:block'}`}>
-            <div className="p-6 pb-28 md:pb-6">
+          <div className={`w-full md:w-2/3 flex-col h-full overflow-y-auto relative ${isMobileListView ? 'hidden md:flex' : 'flex'}`}>
+            <div className="p-6 pb-28 md:pb-6 w-full">
               {isAddingContact ? (
                 <div className="fixed inset-0 bg-white z-50 overflow-y-auto md:relative md:inset-auto">
                   <AddContactForm
@@ -1343,7 +1360,17 @@ export default function Home() {
                   onCancel={() => setIsAddingGlobalInteraction(false)}
                 />
               ) : selectedContact ? (
-                <div onClick={(e) => e.stopPropagation()}>
+                <div onClick={(e) => e.stopPropagation()} className="w-full">
+                  {/* Add mobile back button at top */}
+                  <Button 
+                    onClick={handleBackToList}
+                    variant="outline"
+                    className="mb-4 md:hidden"
+                  >
+                    ← Back to List
+                  </Button>
+                  
+                  {/* Existing contact details content */}
                   <div className="flex items-center mb-6">
                     <div className="relative h-20 w-20 mr-4">
                       <Image
@@ -1360,7 +1387,7 @@ export default function Home() {
                     </div>
                   </div>
                   
-                  {isEditing && editedContact ? (
+                  {isEditing ? (
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }} className="space-y-4" onClick={(e) => e.stopPropagation()}>
                       {contactFieldOrder.map((section) => (
                         <div key={section.header} className="mb-6">
@@ -1438,16 +1465,10 @@ export default function Home() {
                     </>
                   )}
                   
-                  <div className="mt-6 flex flex-wrap items-center space-x-2 space-y-2">
+                  <div className="mt-6 flex flex-wrap items-center gap-2">
                     <Button onClick={handleAddInteraction} variant="outline">Add Interaction</Button>
-                    <Button 
-                      onClick={() => setIsMobileListView(true)}
-                      variant="outline"
-                      className="md:hidden"
-                    >
-                      Back to List
-                    </Button>
                   </div>
+
                   {isAddingInteraction && (
                     <AddInteractionForm
                       contactId={selectedContact.id}
@@ -1455,6 +1476,7 @@ export default function Home() {
                       onCancel={() => setIsAddingInteraction(false)}
                     />
                   )}
+
                   {/* Interactions section */}
                   <div className="mt-6">
                     <h3 className="font-semibold mb-2">Interactions</h3>
@@ -1470,38 +1492,38 @@ export default function Home() {
                   </div>
 
                   {/* Social Media, Email Breaches, and LinkedIn Data buttons in a row */}
-                  <div className="mt-4 flex flex-row space-x-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <Button 
                       onClick={() => selectedContact && searchSocialMediaProfiles(selectedContact)} 
                       variant="secondary"
-                      className="flex-1 bg-black text-white hover:bg-gray-800"
+                      className="bg-black text-white hover:bg-gray-800"
                       disabled={isSearchingSocialMedia || !selectedContact.name}
                     >
-                      {isSearchingSocialMedia ? 'Searching...' : 'Search Social Media Profiles'}
+                      {isSearchingSocialMedia ? 'Searching...' : 'Search Social Media'}
                     </Button>
                     <Button 
                       onClick={() => selectedContact?.email && handleCheckEmailBreaches()} 
                       variant="secondary"
-                      className="flex-1 bg-black text-white hover:bg-gray-800"
+                      className="bg-black text-white hover:bg-gray-800"
                       disabled={isCheckingBreaches || !selectedContact.email}
                     >
-                      {isCheckingBreaches ? 'Checking...' : 'Check Email Breaches'}
+                      {isCheckingBreaches ? 'Checking...' : 'Check Breaches'}
                     </Button>
                     <Button 
                       onClick={() => selectedContact?.linkedin && handleEnrichLinkedInData()} 
                       variant="secondary"
-                      className="flex-1 bg-black text-white hover:bg-gray-800"
+                      className="bg-black text-white hover:bg-gray-800"
                       disabled={isEnrichingLinkedIn || !selectedContact.linkedin}
                     >
-                      {isEnrichingLinkedIn ? 'Enriching...' : 'Enrich LinkedIn Data'}
+                      {isEnrichingLinkedIn ? 'Enriching...' : 'LinkedIn Data'}
                     </Button>
                     <Button 
                       onClick={handleOsintIndustriesSearch} 
                       variant="secondary"
-                      className="flex-1 bg-black text-white hover:bg-gray-800"
+                      className="bg-black text-white hover:bg-gray-800"
                       disabled={isSearchingOsint || !selectedContact?.email}
                     >
-                      {isSearchingOsint ? 'Searching...' : 'OSINT Industries Search'}
+                      {isSearchingOsint ? 'Searching...' : 'OSINT Search'}
                     </Button>
                   </div>
 
@@ -1551,26 +1573,26 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Mobile Menu - visible only on mobile */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white bg-opacity-90 border-t flex justify-around py-1 z-10"> {/* Changed py-2 to py-1 and added bg-opacity-90 */}
-          <Button variant="ghost" onClick={handleContactsButtonClick}>
+        {/* Mobile menu bar with icons only - no captions */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 md:hidden z-50 flex justify-around mobile-nav">
+          <Button variant="ghost" className="flex flex-col items-center" onClick={handleContactsButtonClick}>
             <Users className="h-6 w-6" />
           </Button>
-          <Button variant="ghost" onClick={handleGlobalInteractionClick}>
-            <Calendar className="h-6 w-6" />
+          
+          <Button variant="ghost" className="flex flex-col items-center" onClick={handleAddContact}>
+            <UserPlus className="h-6 w-6" />
           </Button>
-          {/* <Button variant="ghost" onClick={handleAddReminder}>
-            <Bell className="h-6 w-6" />
-          </Button> */}
-          <Button variant="ghost" onClick={() => router.push('/all-reminders')}>
+          
+          <Button variant="ghost" className="flex flex-col items-center" onClick={handleGlobalInteractionClick}>
+            <FileText className="h-6 w-6" />
+          </Button>
+          
+          <Button variant="ghost" className="flex flex-col items-center" onClick={() => router.push('/all-reminders')}>
             <Bell className="h-6 w-6" />
           </Button>
-          {/* Add the Upload Chat Log button here */}
-          <Button variant="ghost" onClick={() => setIsUploadingChatLog(true)}>
+          
+          <Button variant="ghost" className="flex flex-col items-center" onClick={() => setIsUploadingChatLog(true)}>
             <Upload className="h-6 w-6" />
-          </Button>
-          <Button variant="ghost" onClick={handleSignOut}>
-            <LogOut className="h-6 w-6" />
           </Button>
         </div>
 

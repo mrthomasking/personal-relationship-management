@@ -144,17 +144,6 @@ html, body {
   }
 }
 
-/* Ensure mobile view has proper spacing */
-@media (max-width: 767px) {
-  .fixed.bottom-0 {
-    z-index: 50 !important;
-  }
-  
-  .pb-28 {
-    padding-bottom: 7rem !important;
-  }
-}
-
 /* Fix for Firefox and Safari layout differences */
 .flex-col, .flex-row {
   display: flex;
@@ -164,4 +153,119 @@ html, body {
 .h-screen, .h-full {
   height: 100vh;
   height: 100dvh; /* Modern viewport height that accounts for mobile browser UI */
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 767px) {
+  /* Ensure contact details are visible */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    height: 100vh;
+    height: 100dvh;
+    max-height: calc(100vh - 60px); /* Account for bottom nav */
+    overflow-y: auto !important;
+  }
+
+  /* Fix bottom nav bar */
+  .fixed.bottom-0 {
+    z-index: 100 !important;
+    border-top: 1px solid var(--border);
+    background-color: white;
+    height: 60px;
+    display: flex !important; /* Force display of bottom nav */
+  }
+
+  /* Force proper display for navigation elements */
+  .md\:hidden.fixed.bottom-0 {
+    display: flex !important;
+  }
+
+  /* Ensure proper spacing at bottom of scrollable areas */
+  .pb-28 {
+    padding-bottom: 7rem !important;
+  }
+
+  /* Fix any overlapping elements */
+  .z-50 {
+    z-index: 50 !important;
+  }
+
+  /* Make sure images are responsive */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Improve button spacing in mobile view */
+  .gap-2 {
+    gap: 0.5rem !important;
+  }
+
+  /* Make sure flex wrap works properly on small screens */
+  .flex-wrap {
+    flex-wrap: wrap !important;
+  }
+
+  /* Don't apply the force display none to navigation elements */
+  [class*="md:hidden"]:not(.fixed.bottom-0) {
+    display: none !important;
+  }
+
+  /* Add back the md:flex rule */
+  [class*="md:flex"] {
+    display: flex !important;
+  }
+
+  /* When in contact detail view, ensure it's visible on mobile */
+  .w-full.md\:w-2\/3:not(.hidden) {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 60px !important; /* Leave room for bottom nav */
+    z-index: 40 !important;
+    background-color: white !important;
+  }
+
+  /* Force display none when hidden class is applied */
+  .hidden:not(.fixed.bottom-0) {
+    display: none !important;
+  }
+}
+
+/* Ensure scrollable areas work properly on touch devices */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Special rules for mobile navigation */
+.mobile-nav {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  padding: 8px 2px !important;
+  height: 56px !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+.mobile-nav button {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav button:active {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: scale(0.95);
 }
