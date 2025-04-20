@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useAuth } from '../lib/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import SignIn from '@/components/SignIn'
@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Users, Calendar, FileText, Menu, ChevronDown, ChevronUp, UserPlus, LogOut, Bell, Check, X, CalendarClock, Star, StarOff, Upload } from 'lucide-react'
+import { Plus, Users, Calendar, FileText, Menu, ChevronDown, ChevronUp, UserPlus, LogOut, Bell, Check, X, CalendarClock, Star, StarOff, Upload, Camera } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, getDoc, query, where, orderBy } from 'firebase/firestore'
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { AddInteractionForm } from '@/components/AddInteractionForm'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import axios from 'axios'
@@ -341,12 +342,51 @@ const AddContactForm: React.FC<AddContactFormProps> = ({ onAddContact, onCancel 
     breaches: '',
     userId: '',
   })
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setProfileImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("Form submitted with data:", newContact);
-    onAddContact(newContact);
+    
+    // Create a contact with default avatar first
+    let contactToAdd = { ...newContact, userId: user?.uid || '' };
+    
+    // If there's a profile image, upload it to Firebase Storage
+    if (profileImage) {
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, `profile-images/${user?.uid}/${Date.now()}_${profileImage.name}`);
+        
+        await uploadBytes(storageRef, profileImage);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        // Update contact with the image URL
+        contactToAdd.avatar = downloadURL;
+      } catch (error) {
+        console.error("Error uploading profile image:", error);
+        toast.error("Failed to upload profile image. Using default avatar.");
+      }
+    }
+    
+    onAddContact(contactToAdd);
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -357,11 +397,51 @@ const AddContactForm: React.FC<AddContactFormProps> = ({ onAddContact, onCancel 
   const handleFormClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   }
+  
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 h-full flex flex-col" onClick={handleFormClick}>
       <div className="p-6 flex-grow overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Add New Contact</h2>
+        
+        {/* Improved Profile Image Upload */}
+        <div className="mb-6 flex flex-col items-center">
+          <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-gray-300 mb-3 group">
+            <Image 
+              src={imagePreview || '/placeholder-user.jpg'} 
+              alt="Profile Preview" 
+              width={128} 
+              height={128} 
+              className="object-cover w-full h-full"
+            />
+            <label htmlFor="new-profile-image-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <div className="flex flex-col items-center text-white p-2">
+                <Camera className="h-8 w-8 mb-1" />
+                <span className="text-sm text-center">Add Photo</span>
+              </div>
+            </label>
+          </div>
+          <input
+            id="new-profile-image-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+            ref={fileInputRef}
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            className="mt-1"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Camera className="h-4 w-4 mr-2" /> Select Profile Picture
+          </Button>
+        </div>
         
         {contactFieldOrder.map((section) => (
           <div key={section.header} className="mb-6">
@@ -721,9 +801,33 @@ export default function Home() {
     if (selectedContact) {
       setEditedContact({ ...selectedContact })
       setIsEditing(true)
-      setIsMobileListView(false) // Add this line
+      setIsMobileListView(false)
     }
   }, [selectedContact])
+
+  // Function to handle profile image upload when editing
+  const handleEditProfileImage = useCallback(async (file: File) => {
+    if (!editedContact) return;
+    
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `profile-images/${user?.uid}/${Date.now()}_${file.name}`);
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      // Update edited contact with new image URL
+      setEditedContact(prev => ({
+        ...prev!,
+        avatar: downloadURL
+      }));
+      
+      toast.success("Profile image uploaded. Save changes to update.");
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      toast.error("Failed to upload profile image.");
+    }
+  }, [editedContact, user?.uid]);
 
   const handleCancelEdit = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation()
@@ -1260,7 +1364,7 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen bg-gray-100 relative"> {/* Added relative positioning */}
+      <div className="flex h-screen bg-gray-100 relative pb-16 md:pb-0"> {/* Added padding-bottom to account for mobile nav */}
         {/* Main Menu - visible only on desktop */}
         <div className="hidden md:flex w-16 bg-white border-r flex-col items-center py-4">
           <Button variant="ghost" className="mb-4" onClick={handleContactsButtonClick}>
@@ -1302,9 +1406,9 @@ export default function Home() {
               <h2 className="text-lg font-semibold">All contacts</h2>
               <Button size="sm" onClick={handleAddContact}><Plus className="w-4 h-4 mr-2" /> Add new contact</Button>
             </div>
-            {/* ScrollArea for better cross-platform scrolling behavior */}
+            {/* ScrollArea with explicit height calculation to account for mobile menu */}
             <ScrollArea className="flex-grow">
-              <div className="pb-20 md:pb-0"> {/* Add padding at the bottom for mobile */}
+              <div className="pb-20 md:pb-0 max-h-[calc(100vh-16rem)] md:max-h-none overflow-y-auto"> {/* Set explicit max height and ensure scrolling */}
                 {filteredContacts.map((contact) => (
                   <div
                     key={contact.id}
@@ -1328,10 +1432,15 @@ export default function Home() {
                         }`} 
                       />
                     </Button>
-                    <Avatar className="h-10 w-10 ml-2">
-                      <AvatarImage src={getAvatarSrc(contact)} alt={contact.name} />
-                      <AvatarFallback>{contact.name[0]}</AvatarFallback>
-                    </Avatar>
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ml-2 relative bg-gray-200">
+                      <Image 
+                        src={getAvatarSrc(contact)} 
+                        alt={contact.name}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        className="rounded-full"
+                      />
+                    </div>
                     <div className="ml-4 flex-grow">
                       <div className="font-medium">{contact.name}</div>
                       <div className="text-sm text-gray-500">{contact.relationship}</div>
@@ -1348,6 +1457,8 @@ export default function Home() {
                     </Button>
                   </div>
                 ))}
+                {/* Moderate spacer div for mobile only */}
+                <div className="h-40 md:h-0 mobile-spacer"></div>
               </div>
             </ScrollArea>
           </div>
@@ -1400,6 +1511,45 @@ export default function Home() {
                   
                   {isEditing ? (
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                      {/* Improved profile image upload in edit mode */}
+                      <div className="mb-6 flex flex-col items-center">
+                        <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-gray-300 mb-3 group">
+                          <Image 
+                            src={editedContact?.avatar || '/placeholder-user.jpg'} 
+                            alt="Profile Avatar" 
+                            width={128} 
+                            height={128} 
+                            className="object-cover w-full h-full"
+                          />
+                          <label htmlFor="profile-image-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                            <div className="flex flex-col items-center text-white p-2">
+                              <Camera className="h-8 w-8 mb-1" />
+                              <span className="text-sm text-center">Change Photo</span>
+                            </div>
+                          </label>
+                        </div>
+                        <input
+                          id="profile-image-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleEditProfileImage(e.target.files[0]);
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-1"
+                          onClick={() => document.getElementById('profile-image-upload')?.click()}
+                        >
+                          <Camera className="h-4 w-4 mr-2" /> Select Profile Picture
+                        </Button>
+                      </div>
+                      
                       {contactFieldOrder.map((section) => (
                         <div key={section.header} className="mb-6">
                           <h3 className="font-bold text-lg mb-2">{section.header}</h3>
@@ -1585,7 +1735,7 @@ export default function Home() {
         </div>
 
         {/* Mobile menu bar with icons only - no captions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 md:hidden z-50 flex justify-around mobile-nav">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 md:hidden z-50 flex justify-around mobile-nav" style={{ height: "4rem" }}>
           <Button variant="ghost" className="flex flex-col items-center" onClick={handleContactsButtonClick}>
             <Users className="h-6 w-6" />
           </Button>
@@ -1785,7 +1935,7 @@ function GlobalAddInteractionForm({ contacts, onInteractionAdded, onCancel }: {
   );
 }
 
-// Add this at the end of the file, outside of the Home component
+// Add this at the end of the file as well
 function InteractionTile({ interaction }: { interaction: Interaction }) {
   return (
     <div className="bg-white shadow rounded-lg p-4">
