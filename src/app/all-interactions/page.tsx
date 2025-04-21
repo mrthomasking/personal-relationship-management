@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { collection, query, getDocs, doc, orderBy, limit, where, addDoc } from 'firebase/firestore'
+import { collection, query, getDocs, doc, orderBy, limit, where, addDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Users, Calendar, Bell, LogOut, Upload, Plus } from 'lucide-react'
+import { Users, Calendar, Bell, LogOut, Upload, Plus, Edit, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { MobileNavBar } from '@/components/MobileNavBar'
 
@@ -34,6 +34,7 @@ export default function AllInteractions() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddingInteraction, setIsAddingInteraction] = useState(false)
+  const [editingInteraction, setEditingInteraction] = useState<Interaction | null>(null)
   const [newInteraction, setNewInteraction] = useState<Omit<Interaction, 'id' | 'createdAt'>>({
     contactId: '',
     date: new Date().toISOString().split('T')[0],
@@ -138,6 +139,39 @@ export default function AllInteractions() {
     } catch (error) {
       console.error("Error adding interaction:", error)
       toast.error("Failed to add interaction")
+    }
+  }
+
+  const handleEditInteraction = (interaction: Interaction) => {
+    setEditingInteraction(interaction)
+    setIsAddingInteraction(false)
+  }
+
+  const handleUpdateInteraction = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingInteraction) return
+    
+    try {
+      const interactionRef = doc(db, 'interactions', editingInteraction.id)
+      const updateData = {
+        contactId: editingInteraction.contactId,
+        date: editingInteraction.date,
+        type: editingInteraction.type,
+        notes: editingInteraction.notes
+      }
+      
+      await updateDoc(interactionRef, updateData)
+      
+      // Update the interactions list
+      setInteractions(interactions.map(interaction => 
+        interaction.id === editingInteraction.id ? editingInteraction : interaction
+      ))
+      
+      setEditingInteraction(null)
+      toast.success("Interaction updated successfully")
+    } catch (error) {
+      console.error("Error updating interaction:", error)
+      toast.error("Failed to update interaction")
     }
   }
 
@@ -254,6 +288,68 @@ export default function AllInteractions() {
             </form>
           )}
 
+          {editingInteraction && (
+            <form onSubmit={handleUpdateInteraction} className="mb-4 p-4 bg-white rounded-lg shadow">
+              <h3 className="font-semibold mb-2">Edit Interaction</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Contact</label>
+                  <select
+                    value={editingInteraction.contactId}
+                    onChange={(e) => setEditingInteraction({...editingInteraction, contactId: e.target.value})}
+                    className="w-full p-2 border rounded mb-2"
+                    required
+                  >
+                    <option value="">Select a contact</option>
+                    {contacts.map((contact) => (
+                      <option key={contact.id} value={contact.id}>
+                        {contact.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date</label>
+                  <Input
+                    type="date"
+                    value={editingInteraction.date}
+                    onChange={(e) => setEditingInteraction({...editingInteraction, date: e.target.value})}
+                    className="mb-2"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Type</label>
+                  <Input
+                    placeholder="e.g., Phone Call, Meeting, Email"
+                    value={editingInteraction.type}
+                    onChange={(e) => setEditingInteraction({...editingInteraction, type: e.target.value})}
+                    className="mb-2"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Notes</label>
+                  <textarea
+                    placeholder="Details about the interaction"
+                    value={editingInteraction.notes}
+                    onChange={(e) => setEditingInteraction({...editingInteraction, notes: e.target.value})}
+                    className="w-full p-2 border rounded mb-2 min-h-[100px]"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <Button type="submit">Update Interaction</Button>
+                <Button variant="outline" onClick={() => setEditingInteraction(null)}>Cancel</Button>
+              </div>
+            </form>
+          )}
+
           <ScrollArea className="h-[calc(100vh-200px)]">
             {filteredInteractions.length === 0 ? (
               <p>No interactions found.</p>
@@ -271,7 +367,17 @@ export default function AllInteractions() {
                         <div className="text-sm text-gray-500">{new Date(interaction.date).toLocaleDateString()}</div>
                       </div>
                       <div className="text-gray-700 whitespace-pre-line text-sm mb-2">{interaction.notes}</div>
-                      <div className="text-sm font-medium text-blue-600">Contact: {contactName}</div>
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm font-medium text-blue-600">Contact: {contactName}</div>
+                        <Button 
+                          onClick={() => handleEditInteraction(interaction)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-500 hover:text-blue-500"
+                        >
+                          <Edit className="h-4 w-4 mr-1" /> Edit
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
