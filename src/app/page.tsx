@@ -405,7 +405,7 @@ const AddContactForm: React.FC<AddContactFormProps> = ({ onAddContact, onCancel 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 h-full flex flex-col" onClick={handleFormClick}>
-      <div className="p-6 flex-grow overflow-y-auto">
+      <div className="p-6 flex-grow overflow-y-auto pb-24">
         <h2 className="text-2xl font-bold mb-4">Add New Contact</h2>
         
         {/* Profile Image Upload - Simplified to just the button */}
@@ -466,12 +466,26 @@ const AddContactForm: React.FC<AddContactFormProps> = ({ onAddContact, onCancel 
         ))}
       </div>
       
-      {/* Fixed position buttons at the bottom */}
-      <div className="p-4 bg-white border-t flex justify-end space-x-2">
-        <Button type="button" onClick={onCancel} variant="outline">
+      {/* Floating Save Button */}
+      <div className="fixed bottom-20 md:bottom-4 right-4 z-[1000] flex gap-2">
+        <Button
+          type="button"
+          onClick={(e) => { 
+            e.stopPropagation();
+            onCancel();
+          }}
+          variant="outline"
+          className="rounded-full shadow-lg"
+        >
           Cancel
         </Button>
-        <Button type="submit">Add Contact</Button>
+        <Button
+          type="submit"
+          onClick={(e) => e.stopPropagation()}
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center"
+        >
+          Add Contact
+        </Button>
       </div>
     </form>
   );
@@ -1376,7 +1390,7 @@ export default function Home() {
           <Button variant="ghost" className="mb-4" onClick={handleContactsButtonClick}>
             <Users className="h-6 w-6" />
           </Button>
-          <Button variant="ghost" className="mb-4" onClick={handleGlobalInteractionClick}>
+          <Button variant="ghost" className="mb-4" onClick={() => router.push('/all-interactions')}>
             <Calendar className="h-6 w-6" />
           </Button>
           <Button variant="ghost" className="mb-4" onClick={() => router.push('/all-reminders')}>
@@ -1500,17 +1514,15 @@ export default function Home() {
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                       {/* Profile Image */}
                       <div className="flex-shrink-0">
-                        <Avatar className="h-32 w-32 rounded-lg border-4 border-white shadow-md">
-                          {selectedContact.avatar ? (
-                            <AvatarImage src={getAvatarSrc(selectedContact)} alt={selectedContact.name} />
-                          ) : selectedContact.linkedin_profile_pic_url ? (
-                            <AvatarImage src={selectedContact.linkedin_profile_pic_url} alt={selectedContact.name} />
-                          ) : (
-                            <AvatarFallback className="text-4xl font-semibold bg-blue-100 text-blue-800">
-                              {selectedContact.name.charAt(0)}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
+                        <div className="h-32 w-32 rounded-full border-4 border-white shadow-md relative bg-gray-200 overflow-hidden">
+                          <Image 
+                            src={getAvatarSrc(selectedContact)} 
+                            alt={selectedContact.name}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            className="rounded-full"
+                          />
+                        </div>
                       </div>
                       
                       {/* Contact Info */}

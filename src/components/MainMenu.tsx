@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Users, Calendar, Bell, Settings, LogOut, CalendarClock } from 'lucide-react';
+import { Home, Users, Calendar, Bell, Settings, LogOut, CalendarClock, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -35,6 +35,11 @@ export function MainMenu() {
       <Link href="/all-reminders" passHref>
         <Button variant="ghost" className="mb-4">
           <CalendarClock className="h-6 w-6" />
+        </Button>
+      </Link>
+      <Link href="/all-interactions" passHref>
+        <Button variant="ghost" className="mb-4">
+          <FileText className="h-6 w-6" />
         </Button>
       </Link>
       <Link href="/reminders" passHref>

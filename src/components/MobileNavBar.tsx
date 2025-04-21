@@ -141,6 +141,18 @@ export function MobileNavBar({
               <Button 
                 onClick={(e) => {
                   e.stopPropagation();
+                  navigateTo('/all-interactions');
+                }}
+                className="p-3 flex items-center space-x-3 rounded-lg hover:bg-gray-100 justify-start"
+                variant="ghost"
+              >
+                <FileText size={20} />
+                <span>All Interactions</span>
+              </Button>
+              
+              <Button 
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (onGlobalInteraction) {
                     onGlobalInteraction();
                     setIsMenuOpen(false);
@@ -150,7 +162,7 @@ export function MobileNavBar({
                 variant="ghost"
               >
                 <FileText size={20} />
-                <span>Global Interaction</span>
+                <span>Add New Interaction</span>
               </Button>
               
               <Button 

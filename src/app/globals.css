@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Add font size normalization to ensure consistency across environments */
+html {
+  font-size: 16px; /* Set explicit base font size */
+}
+
+body {
+  font-size: 1rem; /* Use relative units for body text */
+  -webkit-text-size-adjust: 100%; /* Prevent iOS auto text size adjustment */
+  text-size-adjust: 100%; /* Standard property for other browsers */
+}
+
+/* Force consistent text rendering */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
